@@ -1,7 +1,8 @@
 #!/bin/bash
-##Test version 0.1
-##Find all mp4 file and encode to prefer format
-##Blow example are encode to 480p. You may midify it to 720p or 1080p etc.
+##Test version 0.1 You must install ffmpeg 3.x to use this script.
+##Find all mp4 file (or ffmpeg support format) and encode to prefer format.
+##Blow example are encode videos to 480p. You may midify it to 720p or 1080p etc.
+##Original file will delete after encode. You can delete line 9 to stop this.
 find . -type f -name '*.mp4' | while read -r file;
 do
       ffmpeg -i "$file" -c:v libx264 -s hd480 -preset medium -crf 23   -movflags +faststart ../"$file" -nostdin 
