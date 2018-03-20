@@ -1,0 +1,9 @@
+#!/bin/bash
+##Test version 0.1
+##Find all mp4 file and encode to prefer format
+##Blow example are encode to 480p. You maycan midify it to 720p or 1080p etc.
+find . -type f -name '*.mp4' | while read -r file;
+do
+      ffmpeg -i "$file" -c:v libx264 -s hd480 -preset medium -crf 23   -movflags +faststart ../"$file" -nostdin 
+      rm "$file"
+done
