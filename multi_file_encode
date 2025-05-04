@@ -1,10 +1,76 @@
 #!/bin/bash
-##Test version 0.1 You must install ffmpeg 3.x to use this script.
-##Find all mp4 file (or ffmpeg support format) and encode to prefer format.
-##Blow example are encode videos to 480p. You may midify it to 720p or 1080p etc.
-##Original file will delete after encode. You can delete line 9 to stop this.
-find . -type f -name '*.mp4' | while read -r file;
-do
-      ffmpeg -i "$file" -c:v libx264 -s hd480 -preset medium -crf 23   -movflags +faststart ../"$file" -nostdin 
-      rm "$file"
-done
+
+# Script to scan media files in the current directory and encode them.
+
+# --- Configuration ---
+ENCODER="ffmpeg"  # Choose your encoder (e.g., ffmpeg, avconv)
+OUTPUT_FORMAT="mp4" # Desired output format (e.g., mp4, mkv, webm)
+VIDEO_CODEC="libx264" # Video codec (e.g., libx264, h265, vp9)
+AUDIO_CODEC="aac"    # Audio codec (e.g., aac, mp3, opus)
+QUALITY_PRESET="medium"  # Encoding quality preset (e.g., ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow) - affects encoding speed and file size
+
+# --- Functions ---
+
+function scan_media_files {
+  echo "Scanning for media files..."
+  find . -maxdepth 1 $ -name "*.mp4" -o -name "*.avi" -o -name "*.mov" -o -name "*.mkv" -o -name "*.wmv" -o -name "*.flv" $
+}
+
+function get_input {
+  local prompt="$1"
+  read -p "$prompt: " input
+  echo "$input"
+}
+
+
+function encode_file {
+  local input_file="$1"
+  local output_file="${input_file%.*}.${OUTPUT_FORMAT}" # Replace extension with the new one
+
+  echo "Encoding '$input_file' to '$output_file'..."
+
+  # Get user confirmation before encoding
+  confirm=$(get_input "Confirm encoding of $input_file to $output_file (y/n)?")
+
+  if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+    # Build the ffmpeg command.  Adjust parameters as needed.
+    ffmpeg -i "$input_file" \
+           -c:v "$VIDEO_CODEC" \
+           -preset "$QUALITY_PRESET" \
+           -c:a "$AUDIO_CODEC" \
+           -strict experimental \ # Required for some codecs like aac
+           "$output_file"
+
+    if [ $? -eq 0 ]; then
+      echo "Encoding of '$input_file' successful."
+    else
+      echo "Error encoding '$input_file'."
+    fi
+  else
+    echo "Skipping '$input_file'."
+  fi
+}
+
+
+# --- Main Script ---
+
+# 1. Scan for media files
+media_files=$(scan_media_files)
+
+if [ -z "$media_files" ]; then
+  echo "No media files found in the current directory."
+  exit 0
+fi
+
+# 2. Display found files and encode them one by one
+echo "Found the following media files:"
+echo "$media_files"
+
+while IFS= read -r file; do
+  encode_file "$file"
+done <<< "$media_files"
+
+
+echo "Encoding process complete."
+
+exit 0
